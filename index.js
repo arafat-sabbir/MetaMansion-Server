@@ -27,6 +27,7 @@ async function run() {
 
     const userCollections = client.db("MetaMansion").collection("users");
     const roomsCollections = client.db("MetaMansion").collection("rooms");
+    const bookingCollections = client.db("MetaMansion").collection("booking");
 
     // Add newly registered users to the database
     app.post("/api/createUser", async (req, res) => {
@@ -56,6 +57,14 @@ async function run() {
       const result = await roomsCollections.findOne(query);
       res.send(result);
     })
+
+    // Book room Based on the User
+    app.post("/api/bookRoom", async (req, res) => {
+      const bookingData = req.body;
+      console.log(bookingData);
+      const result = await bookingCollections.insertOne(bookingData);
+      res.send(result);
+      })
 
     await client.db("admin").command({ ping: 1 });
     console.log(
