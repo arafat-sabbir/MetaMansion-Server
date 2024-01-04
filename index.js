@@ -32,7 +32,12 @@ async function run() {
     // Add newly registered users to the database
     app.post("/api/createUser", async (req, res) => {
       const userData = req.body;
-      console.log(userData);
+      const userEmail = userData.email;
+      const query = { email: userEmail };
+      const isExist = await userCollections.findOne(query);
+      if(isExist){
+        return res.send({ message: "User already exists" });
+      }
       const result = await userCollections.insertOne(userData);
       res.send(result);
     });
@@ -61,10 +66,30 @@ async function run() {
     // Book room Based on the User
     app.post("/api/bookRoom", async (req, res) => {
       const bookingData = req.body;
-      console.log(bookingData);
+      const roomId = bookingData.roomId
+      const query = { roomId: roomId };
+      const isExist = await roomsCollections.findOne(query);
+      if(isExist) {
+        return res.send({ message: "Room already booked" });
+      }
       const result = await bookingCollections.insertOne(bookingData);
       res.send(result);
       })
+
+      // make a room unavailabe after successful booking
+      app.patch('/api/makeUnavailable/:id',async(req,res)=>{
+        const id = req.params.id;
+        const query = { _id: new ObjectId(id) };
+        const updateDoc = {
+          $set: {
+            availability: "unavailable"
+          }
+        }
+        const result = await roomsCollections.updateOne(query, updateDoc);
+        res.send(result);
+      })
+      // Get all the booked rooms for user with user email
+      
 
     await client.db("admin").command({ ping: 1 });
     console.log(
