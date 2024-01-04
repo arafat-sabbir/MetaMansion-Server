@@ -41,15 +41,15 @@ async function run() {
       // let query = {};
 
       // Check if the client provided a sorting parameter
-        // If sorting parameter is provided, use it
-        // const sortOrder = req.query?.sortOrder === 'desc' ? -1 : 1;
-        // query = { $query: {}, $orderby: { ["price"]: sortOrder } };
-        // .sort({ price: sortOrder })
+      //   If sorting parameter is provided, use it
+      //   const sortOrder = req.query?.sortOrder === 'desc' ? -1 : 1;
+      //   query = { $query: {}, $orderby: { ["price"]: sortOrder } };
+      //   .sort({ price: sortOrder })
       const result = await roomsCollections.find().toArray();
       res.send(result);
     })
 
-    // Get a specific room details
+    // Get a specific room details For Room Details Page
     app.get('/api/getRoomDetails/:id', async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
