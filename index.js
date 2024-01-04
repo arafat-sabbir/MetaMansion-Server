@@ -6,7 +6,7 @@ require("dotenv").config();
 
 app.use(express.json());
 app.use(cors());
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const uri = process.env.Mongo_URI;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -26,6 +26,7 @@ async function run() {
     // Collections
 
     const userCollections = client.db("MetaMansion").collection("users");
+    const roomsCollections = client.db("MetaMansion").collection("rooms");
 
     // Add newly registered users to the database
     app.post("/api/createUser", async (req, res) => {
@@ -34,6 +35,27 @@ async function run() {
       const result = await userCollections.insertOne(userData);
       res.send(result);
     });
+
+    // Get the available Rooms
+    app.get('/api/getRooms', async (req, res) => {
+      // let query = {};
+
+      // Check if the client provided a sorting parameter
+        // If sorting parameter is provided, use it
+        // const sortOrder = req.query?.sortOrder === 'desc' ? -1 : 1;
+        // query = { $query: {}, $orderby: { ["price"]: sortOrder } };
+        // .sort({ price: sortOrder })
+      const result = await roomsCollections.find().toArray();
+      res.send(result);
+    })
+
+    // Get a specific room details
+    app.get('/api/getRoomDetails/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await roomsCollections.findOne(query);
+      res.send(result);
+    })
 
     await client.db("admin").command({ ping: 1 });
     console.log(
