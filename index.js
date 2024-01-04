@@ -89,6 +89,13 @@ async function run() {
         res.send(result);
       })
       // Get all the booked rooms for user with user email
+      app.get('/api/getMyBookings', async (req, res) => {
+        const email = req.query.email;
+        const query = { userEmail: email };
+        const result = await bookingCollections.find(query).toArray();
+        res.send(result);
+      })
+
       
 
     await client.db("admin").command({ ping: 1 });
