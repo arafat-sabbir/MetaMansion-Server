@@ -1,11 +1,17 @@
 const express = require("express");
 const app = express();
-const cors = require('cors')
+const cors = require("cors");
+const jwt = require("jsonwebtoken");
 const port = process.env.PORT || 5000;
 require("dotenv").config();
 
 app.use(express.json());
-app.use(cors());
+app.use(
+  cors({
+    origin: ["http://localhost:5173"],
+    credentials: true,
+  })
+);
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const uri = process.env.Mongo_URI;
 
@@ -28,6 +34,29 @@ async function run() {
     const userCollections = client.db("MetaMansion").collection("users");
     const roomsCollections = client.db("MetaMansion").collection("rooms");
     const bookingCollections = client.db("MetaMansion").collection("booking");
+    // Make A Token For Signed In User
+    app.post("/jwt", async (req, res) => {
+      try {
+        const user = req.body;
+        const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
+          expiresIn: "1hr",
+        });
+        res
+          .cookie("token", token, {
+            sameSite: "none",
+            secure: true,
+            httpOnly: true,
+          })
+          .send({ "token for the user": token });
+      } catch (error) {
+        res.status(401).send(error);
+      }
+    });
+    // Clear the token if use signOut
+    app.post("/signout", async (req, res) => {
+      const user = req.body;
+      res.clearCookie("token", { maxAge: 0 }).send({ success: true });
+    });
 
     // Add newly registered users to the database
     app.post("/api/createUser", async (req, res) => {
@@ -35,7 +64,7 @@ async function run() {
       const userEmail = userData.email;
       const query = { email: userEmail };
       const isExist = await userCollections.findOne(query);
-      if(isExist){
+      if (isExist) {
         return res.send({ message: "User already exists" });
       }
       const result = await userCollections.insertOne(userData);
@@ -43,7 +72,7 @@ async function run() {
     });
 
     // Get the available Rooms
-    app.get('/api/getRooms', async (req, res) => {
+    app.get("/api/getRooms", async (req, res) => {
       // let query = {};
 
       // Check if the client provided a sorting parameter
@@ -53,57 +82,71 @@ async function run() {
       //   .sort({ price: sortOrder })
       const result = await roomsCollections.find().toArray();
       res.send(result);
-    })
+    });
 
     // Get a specific room details For Room Details Page
-    app.get('/api/getRoomDetails/:id', async (req, res) => {
+    app.get("/api/getRoomDetails/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await roomsCollections.findOne(query);
       res.send(result);
-    })
+    });
 
     // Book room Based on the User
     app.post("/api/bookRoom", async (req, res) => {
       const bookingData = req.body;
-      const roomId = bookingData.roomId
+      const roomId = bookingData.roomId;
       const query = { roomId: roomId };
       const isExist = await roomsCollections.findOne(query);
-      if(isExist) {
+      if (isExist) {
         return res.send({ message: "Room already booked" });
       }
       const result = await bookingCollections.insertOne(bookingData);
       res.send(result);
-      })
+    });
 
-      // make a room unavailabe after successful booking
-      app.patch('/api/makeUnavailable/:id',async(req,res)=>{
-        const id = req.params.id;
-        const query = { _id: new ObjectId(id) };
-        const updateDoc = {
-          $set: {
-            availability: "unavailable"
-          }
-        }
-        const result = await roomsCollections.updateOne(query, updateDoc);
-        res.send(result);
-      })
-      // Get all the booked rooms for user with user email
-      app.get('/api/getMyBookings', async (req, res) => {
-        const email = req.query.email;
-        const query = { userEmail: email };
-        const result = await bookingCollections.find(query).toArray();
-        res.send(result);
-      })
+    // make a room unavailabe after successful booking
+    app.patch("/api/makeUnavailable/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const updateDoc = {
+        $set: {
+          availability: "unavailable",
+        },
+      };
+      const result = await roomsCollections.updateOne(query, updateDoc);
+      res.send(result);
+    });
+    // Get all the booked rooms for user with user email
+    app.get("/api/getMyBookings", async (req, res) => {
+      const email = req.query.email;
+      const query = { userEmail: email };
+      const result = await bookingCollections.find(query).toArray();
+      res.send(result);
+    });
 
-      // Delete A Booking Room 
-      app.delete('/api/deleteBooking/:id',async(req,res)=>{
-        const id = req.params.id;
-        const query = { _id: new ObjectId(id) };
-        const result = await bookingCollections.deleteOne(query);
-        res.send(result);
-      })
+    // Delete A Booking Room
+    app.delete("/api/deleteBooking/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await bookingCollections.deleteOne(query);
+      res.send(result);
+    });
 
+    // update A Booking Date
+    app.patch("/api/updateBookingDate/:id", async (req, res) => {
+      const bookingDate = req.body;
+      console.log(bookingDate);
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const updatedData = {
+        $set: {
+          bookingDate: bookingDate,
+        },
+      };
+      const result = await bookingCollections.updateOne(query, updatedData);
+      res.send(result);
+    });
 
     await client.db("admin").command({ ping: 1 });
     console.log(
