@@ -8,7 +8,7 @@ require("dotenv").config();
 app.use(express.json());
 app.use(
   cors({
-    origin: ["http://localhost:5173"],
+    origin: ["http://localhost:5173","https://metamention-hub.web.app"],
     credentials: true,
   })
 );
@@ -36,7 +36,7 @@ async function run() {
     const bookingCollections = client.db("MetaMansion").collection("booking");
     const reviewCollections = client.db("MetaMansion").collection("review");
     // Make A Token For Signed In User
-    app.post("/jwt", async (req, res) => {
+    app.post("/api/jwt", async (req, res) => {
       try {
         const user = req.body;
         const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
@@ -54,7 +54,7 @@ async function run() {
       }
     });
     // Clear the token if use signOut
-    app.post("/signout", async (req, res) => {
+    app.post("/api/signout", async (req, res) => {
       const user = req.body;
       res.clearCookie("token", { maxAge: 0 }).send({ success: true });
     });
