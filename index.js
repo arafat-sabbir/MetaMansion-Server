@@ -34,6 +34,7 @@ async function run() {
     const userCollections = client.db("MetaMansion").collection("users");
     const roomsCollections = client.db("MetaMansion").collection("rooms");
     const bookingCollections = client.db("MetaMansion").collection("booking");
+    const reviewCollections = client.db("MetaMansion").collection("review");
     // Make A Token For Signed In User
     app.post("/jwt", async (req, res) => {
       try {
@@ -135,8 +136,7 @@ async function run() {
 
     // update A Booking Date
     app.patch("/api/updateBookingDate/:id", async (req, res) => {
-      const bookingDate = req.body;
-      console.log(bookingDate);
+      const {bookingDate} = req.body;
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const updatedData = {
@@ -147,6 +147,23 @@ async function run() {
       const result = await bookingCollections.updateOne(query, updatedData);
       res.send(result);
     });
+
+    // Add Review
+    app.post('/api/addReview',async(req,res)=>{
+      const ReviewData = req.body;
+      const result = await reviewCollections.insertOne(ReviewData)
+      res.send(result)
+    })
+    // get Review For The Specific post 
+    app.get('/api/getReview/:id',async(req,res)=>{
+      const id = req.params.id;
+      console.log(id);
+      const query = {RoomId:id}
+      console.log(query);
+      const result = await reviewCollections.find(query).toArray()
+      res.send(result)
+      console.log(result);
+    })
 
     await client.db("admin").command({ ping: 1 });
     console.log(
